@@ -6,6 +6,7 @@ from __future__ import division, print_function, with_statement
 import serial
 import io
 import logging
+import argparse
 from datetime import datetime
 
 class GPSClock(object):
@@ -103,18 +104,54 @@ class GPSClock(object):
 				faults.append(description)
 		return faults
 
-	def setPulseTime(self):
-		self.SendAndRecieve('PPTIME,XXX:XX:XX:X0.0000000')
+	def setPulseTime(self, autostart=True):
+		# Set the time where pulse should be sent:
+		# TODO: This needs to be set
+		self.SendAndRecieve('PPTIME,XXX:XX:XX:XX.0000000') # One pulse per second - on the second
+		# If specified, also start the pulse:
+		if autostart:
+			self.startPulse()
+
+	def startPulse(self):
 		self.SendAndRecieve('PPMODE,1')
-		self.SendAndRecieve('PPTIME')
+
+	def stopPulse(self):
+		self.SendAndRecieve('PPMODE,0')
 
 if __name__ == '__main__':
 
-	print("starting")
-	with GPSClock('COM5') as c:
-		print(c.version)
-		print(c.time)
-		print(c.position)
-		print(c.faults)
+	logging_level = logging.INFO
+
+	# Commandline input:
+	parser = argparse.ArgumentParser(description='Configure GPS Clock for PICTURE.')
+	parser.add_argument('-p', '--port', type=str, help='COM port.', default='COM5')
+	parser.add_argument('-d', '--debug', help='Print debug messages.', action='store_true')
+	parser.add_argument('-q', '--quiet', help='Only report warnings and errors.', action='store_true')
+	args = parser.parse_args()
+	port = args.port
+	if args.quiet:
+		logging_level = logging.WARNING
+	elif args.debug:
+		logging_level = logging.DEBUG
+
+	# Setup logging:
+	logger = logging.getLogger(__name__)
+	logger.setLevel(logging_level)
+	if not logger.hasHandlers():
+		formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+		console = logging.StreamHandler()
+		console.setFormatter(formatter)
+		logger.addHandler(console)
+
+	# Do something simple:
+	print("Starting...")
+	print("COM Port: ", port)
+	with GPSClock(port) as c:
+		print("Version:  ", c.version)
+		print("Time:     ", c.time)
+		print("Position: ", c.position)
+		print("Faults:   ", c.faults)
 
 		c.setPulseTime()
+
+	print("Done.")
