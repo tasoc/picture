@@ -104,14 +104,17 @@ class GPSClock(object):
 				faults.append(description)
 		return faults
 
-	def setPulseTime(self, autostart=True):
+	def setPulseTime(self, time=None, pps=True, autostart=True):
 		# Set the time where pulse should be sent:
 		# TODO: This needs to be set
-		self.SendAndRecieve('PPTIME,XXX:XX:XX:XX.0000000') # One pulse per second - on the second
+		if time is not None:
+			self.SendAndRecieve('PPTIME,XXX:XX:XX:XX.0000000') # One pulse per second - on the second
+		elif pps:
+			self.SendAndRecieve('PPTIME,XXX:XX:XX:XX.0000000') # One pulse per second - on the second
 		# If specified, also start the pulse:
 		if autostart:
 			self.startPulse()
-
+			
 	def startPulse(self):
 		self.SendAndRecieve('PPMODE,1')
 
@@ -122,7 +125,7 @@ if __name__ == '__main__':
 
 	logging_level = logging.INFO
 
-	# Commandline input:
+	# Command-line input:
 	parser = argparse.ArgumentParser(description='Configure GPS Clock for PICTURE.')
 	parser.add_argument('-p', '--port', type=str, help='COM port.', default='COM5')
 	parser.add_argument('-d', '--debug', help='Print debug messages.', action='store_true')
